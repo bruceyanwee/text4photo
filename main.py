@@ -42,13 +42,13 @@ def get_photo_course():
 # --------------------------------------------------------------------------------
 import io
 import json
+import flask
 from torchvision import models
 import torchvision.transforms as transforms
 from PIL import Image
 from flask import Flask, jsonify, request,render_template,redirect
 from translate import Translator
 
-from torch.nn import functional as F
 import numpy as np
 app = Flask(__name__)
 #--------------用来做更细类别的图像中主体识别的（比如狗中的某一种狗，一共是1000类）
@@ -232,7 +232,32 @@ def rcg_main_object(image_bytes):
     class_name = format_class_name(class_name)
     translator = Translator(to_lang="chinese")
     class_name_zh = class_name+'('+translator.translate(class_name)+')'
-    return class_name_zh
+    return class_name
+# 给出搜索kw关键词，返回相似图片的链接
+from my_tools.text_spider import return_html
+def search_sim_photo(kw):
+    site_list = [
+        {   
+            'base_site':'https://www.vcg.com/',
+            'patten':'https://www.vcg.com/creative-image/jinmao/'
+        },{
+            'base_site':'',
+            'patten':'https://unsplash.com/s/photos/golden-retriever'
+        }
+        ]
+    # upsplash 的检索形式
+    query = 'https://unsplash.com/s/photos/'+kw
+    html = return_html(query)
+    img_links = list(set(html.xpath("//div[@class='_1tO5-']/img/@src")))[:3]
+    kw_data = {
+        "list":[{
+            "img_url":i,
+            "rcd_kw":kw,
+            "rsc_source":"unsplash"
+        } for i in img_links]
+    }
+    return kw_data
+    # 
 # flask 路由
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -258,6 +283,7 @@ def upload_file():
         return jsonify(return_data)
     return render_template('index.html')
 
+# 拍照识别+配文接口
 @app.route('/take_photo',methods=['GET','POST'])
 def get_senti_scenes():
     if request.method == 'POST':
@@ -278,10 +304,35 @@ def get_senti_scenes():
                 'scene_results':scene_results,
                 'sentiment':"positive"
             }
-        return rcg_result
+        return flask.jsonify(rcg_result)
     return render_template('index.html')
 
-
+# 摄影推荐API
+@app.route('/get_sim_photo',methods=['POST'])
+def get_sim_photo():
+    if 'file' not in request.files:
+        print('take photo data upload error')
+        return redirect(request.url)
+    file = request.files.get('file')
+    if not file:
+        return
+    img_bytes = file.read()
+    # 先对精细类别识别 
+    obj_result = rcg_main_object(image_bytes=img_bytes)
+    # 再对场景进行识别    
+    scene_results = rcg_scene(input_img=transform_image(img_bytes))
+    # 调用第三方摄影平台依据识别关键词进行query
+    imgs_main_ob= search_sim_photo(obj_result)
+    imgs_scene = []
+    for scene in scene_results['scene_category']:
+        kw = format_class_name(list(scene.keys())[0])
+        d = search_sim_photo(kw)
+        imgs_scene.extend(d['list'])
+    imgs_all = {
+        "main_ob_list":imgs_main_ob['list'],
+        "scene_list":imgs_scene
+    }
+    return jsonify(imgs_all)
 
 if __name__ == '__main__':
     # 0.0.0.0 是在可以让局域网或者服务器上访问，
