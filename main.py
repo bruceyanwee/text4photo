@@ -38,7 +38,6 @@ def get_photo_course():
 #   2. fangpai()
 #   input:用户上传的img 
 #   return:相似的优秀imglist，包括推荐依据
-# 
 # --------------------------------------------------------------------------------
 import io
 import json
@@ -65,7 +64,6 @@ import os
 import numpy as np
 import cv2
 from PIL import Image
-
 
 # hacky way to deal with the Pytorch 1.0 update
 def recursion_change_bn(module):
@@ -143,7 +141,6 @@ def returnTF():
         trn.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
     return tf
-
 
 def load_model():
     # this model has a last conv feature map as 14x14

@@ -6,7 +6,6 @@ import pandas as pd
 # 反爬虫用到的
 proxy_list = [
     '120.83.105.119:9999',
-
 ]
 # 请求网页传的参数
 # 收集到的常用Header
