@@ -93,12 +93,10 @@ def returnTF():
 
 def load_model():
     # this model has a last conv feature map as 14x14
-
     model_file = 'res_scene/wideresnet18_places365.pth.tar'
     if not os.access(model_file, os.W_OK):
         os.system('wget http://places2.csail.mit.edu/models_places365/' + model_file)
         os.system('wget https://raw.githubusercontent.com/csailvision/places365/master/wideresnet.py')
-
     import wideresnet
     model = wideresnet.resnet18(num_classes=365)
     checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
@@ -116,8 +114,6 @@ def load_model():
     for name in features_names:
         model._modules.get(name).register_forward_hook(hook_feature)
     return model
-
-
 # load the labels
 classes, labels_IO, labels_attribute, W_attribute = load_labels()
 
