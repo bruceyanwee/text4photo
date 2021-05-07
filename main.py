@@ -335,4 +335,4 @@ if __name__ == '__main__':
     # 0.0.0.0 是在可以让局域网或者服务器上访问，
     # app.run(debug=True,host='0.0.0.0',port=8080)
     # 127.0.0.1 是仅仅在本地浏览器
-    app.run(debug=True,host='127.0.0.1',port=8080)
+    app.run(debug=True,host='127.0.0.1',port=5000)
