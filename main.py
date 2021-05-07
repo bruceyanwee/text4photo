@@ -46,10 +46,12 @@ from torchvision import models
 import torchvision.transforms as transforms
 from PIL import Image
 from flask import Flask, jsonify, request,render_template,redirect
+from flask_cors import CORS
 from translate import Translator
 
 import numpy as np
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
 #--------------用来做更细类别的图像中主体识别的（比如狗中的某一种狗，一共是1000类）
 imagenet_class_index = json.load(open('./imagenet_class_index.json'))
 model = models.densenet121(pretrained=True)
@@ -333,6 +335,6 @@ def get_sim_photo():
 
 if __name__ == '__main__':
     # 0.0.0.0 是在可以让局域网或者服务器上访问，
-    # app.run(debug=True,host='0.0.0.0',port=8080)
+    app.run(debug=True,host='0.0.0.0',port=8080)
     # 127.0.0.1 是仅仅在本地浏览器
-    app.run(debug=True,host='127.0.0.1',port=8080)
+    # app.run(debug=True,host='127.0.0.1',port=8080)
