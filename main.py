@@ -46,10 +46,12 @@ from torchvision import models
 import torchvision.transforms as transforms
 from PIL import Image
 from flask import Flask, jsonify, request,render_template,redirect
+from flask_cors import CORS
 from translate import Translator
 
 import numpy as np
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
 #--------------用来做更细类别的图像中主体识别的（比如狗中的某一种狗，一共是1000类）
 imagenet_class_index = json.load(open('./imagenet_class_index.json'))
 model = models.densenet121(pretrained=True)
@@ -188,10 +190,12 @@ def rcg_scene(input_img):
     io_label = 'indoor' if io_image < 0.5 else 'outdoor'
     # output the prediction of scene category
     scene_category = [{classes[idx[i]]:str(round(probs[i],3))} for i in range(5)]
+    scene_category = [{"name":classes[idx[i]],"value":int(100*probs[i])} for i in range(6)]
     # output the scene attributes
     responses_attribute = W_attribute.dot(features_blobs[1])
     idx_a = np.argsort(responses_attribute)
-    scene_attributes = [labels_attribute[idx_a[i]] for i in range(-1,-10,-1)]
+    scene_attributes = [{"name":labels_attribute[idx_a[i]],"textSize":20} for i in range(-1,-10,-1)]
+    scene_attributes.append({"name":io_label,"textSize":35})
     scene_data = {  
         'io_label':io_label,      
         'scene_category':scene_category,
@@ -296,10 +300,12 @@ def get_senti_scenes():
         obj_result = rcg_main_object(image_bytes=img_bytes)
         # 再对场景进行识别    
         scene_results = rcg_scene(input_img=transform_image(img_bytes))
+        senti_arr = [np.random.randint(20,300) for i in range(8)]
+        scene_results['scene_attributes'].append({"name":obj_result,"textSize":50})
         rcg_result = {
                 'obj_result':obj_result,
                 'scene_results':scene_results,
-                'sentiment':"positive"
+                'sentiment':senti_arr
             }
         return flask.jsonify(rcg_result)
     return render_template('index.html')
@@ -335,4 +341,5 @@ if __name__ == '__main__':
     # 0.0.0.0 是在可以让局域网或者服务器上访问，
     # app.run(debug=True,host='0.0.0.0',port=8080)
     # 127.0.0.1 是仅仅在本地浏览器
-    app.run(debug=True,host='127.0.0.1',port=5000)
+    app.run(debug=True,host='127.0.0.1',port=8080)
+    # app.run(debug=True,host='127.0.0.1',port=8080)
