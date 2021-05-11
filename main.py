@@ -48,7 +48,7 @@ from PIL import Image
 from flask import Flask, jsonify, request,render_template,redirect
 from flask_cors import CORS
 from translate import Translator
-
+import pandas as pd
 import numpy as np
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -293,6 +293,8 @@ def get_senti_scenes():
             print('take photo data upload error')
             return redirect(request.url)
         file = request.files.get('file')
+        # 获取用户选择的拍照场景关键词，根据该关键词去配文库中的筛选
+        input_scene_kw = request.form.get('user_input_scene')
         if not file:
             return
         img_bytes = file.read()
@@ -302,10 +304,15 @@ def get_senti_scenes():
         scene_results = rcg_scene(input_img=transform_image(img_bytes))
         senti_arr = [np.random.randint(20,300) for i in range(8)]
         scene_results['scene_attributes'].append({"name":obj_result,"textSize":50})
+        # 再根据用户选择的场景关键词配文
+        file_name = './res_text/'+input_scene_kw+'.csv'
+        df = pd.read_csv(file_name)
+        peiwen_li = list(df['text'][1:6])
         rcg_result = {
                 'obj_result':obj_result,
                 'scene_results':scene_results,
-                'sentiment':senti_arr
+                'sentiment':senti_arr,
+                'peiwen_li':peiwen_li
             }
         return flask.jsonify(rcg_result)
     return render_template('index.html')
